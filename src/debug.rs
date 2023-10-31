@@ -45,6 +45,6 @@ fn constant_instruction(name: &str, chunk: &Chunk, offset: usize) -> usize {
     return offset + 2;
 }
 
-fn print_value(value: Value) {
+pub(crate) fn print_value(value: Value) {
     print!("{}", value)
 }

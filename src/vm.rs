@@ -36,18 +36,18 @@ impl VM {
     pub(crate) fn interpret(&mut self, chunk: Chunk) -> InterpretResult {
         self.chunk = chunk;
         self.ip = self.chunk.code.len();
-        return self.run()
+        self.run()
     }
 
     fn readByte(&mut self) -> usize {
         let ip = self.ip;
         self.ip += 1;
-        return ip;
+        ip
     }
 
     fn readConstant(&mut self) -> Value {
         let byte = self.readByte();
-        return self.chunk.constants[byte];
+        self.chunk.constants[byte]
     }
 
     fn binaryOp(&mut self, op: BinaryOp) -> Value {

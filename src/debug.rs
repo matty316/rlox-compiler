@@ -20,29 +20,29 @@ fn disassemble_instruction(chunk: &Chunk, offset: usize) -> usize {
     
     match instruction {
         0 => { // OpConstant
-            return constant_instruction("OP_CONSTANT", chunk, offset);
+            constant_instruction("OP_CONSTANT", chunk, offset)
         }
         1 => { // OpReturn
-            return simple_instruction("OP_RETURN", offset);
+            simple_instruction("OP_RETURN", offset)
         }
         _ => {
             println!("unknown opcode {}", instruction);
-            return offset + 1;
+            offset + 1
         }
     }
 }
 
 fn simple_instruction(name: &str, offset: usize) -> usize {
     println!("{}", name);
-    return offset + 1;
+    offset + 1
 }
 
 fn constant_instruction(name: &str, chunk: &Chunk, offset: usize) -> usize {
     let constant = chunk.code[offset + 1];
     print!("{} {} '", name, constant);
     print_value(chunk.constants[constant as usize]);
-    print!("'\n");
-    return offset + 2;
+    println!("'");
+    offset + 2
 }
 
 pub(crate) fn print_value(value: Value) {

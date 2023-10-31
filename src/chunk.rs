@@ -1,8 +1,10 @@
 pub(crate) type Value = f32;
 
-
-pub(crate) const OP_CONSTANT: u8 = 0;
-pub(crate) const OP_RETURN: u8 = 1;
+#[repr(u8)]
+pub(crate) enum OpCode {
+    OpConstant,
+    OpReturn,
+}
 
 pub(crate) struct Chunk {
     pub(crate) code: Vec<u8>,

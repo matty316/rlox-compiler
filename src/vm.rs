@@ -1,7 +1,7 @@
 use crate::chunk::{Chunk, Value};
-use crate::debug::print_value;
+use crate::debug::{print_value, disassemble_instruction};
+use crate::chunk::OpCode::*;
 
-#[repr(u8)]
 enum BinaryOp {
     Add, Subtract, Multiply, Divide
 }
@@ -16,8 +16,9 @@ pub(crate) struct VM {
     chunk: Chunk,
     ip: usize,
     stack: Vec<Value>,
-    stack_top: usize,
 }
+
+static DEBUG: bool = true;
 
 impl VM {
     pub(crate) fn new() -> Self {
@@ -25,59 +26,95 @@ impl VM {
             chunk: Chunk::new(),
             ip: 0,
             stack: vec![],
-            stack_top: 0,
         }
     }    
 
-    fn reset_stack(&mut self) {
-        self.stack_top = self.stack.len();
-    }
-
     pub(crate) fn interpret(&mut self, chunk: Chunk) -> InterpretResult {
         self.chunk = chunk;
-        self.ip = self.chunk.code.len();
+        self.ip = 0;
         self.run()
     }
 
-    fn readByte(&mut self) -> usize {
+    fn push(&mut self, value: Value) {
+        self.stack.push(value);
+    }
+
+    fn pop(&mut self) -> Value {
+        self.stack.pop().unwrap()
+    }
+
+    fn readByte(&mut self) -> u8 {
         let ip = self.ip;
         self.ip += 1;
-        ip
+        self.chunk.code[ip]
     }
 
     fn readConstant(&mut self) -> Value {
         let byte = self.readByte();
-        self.chunk.constants[byte]
+        self.chunk.constants[byte as usize]
     }
 
     fn binaryOp(&mut self, op: BinaryOp) -> Value {
-        let b = self.stack.pop().unwrap();
-        let a = self.stack.pop().unwrap();
-        match op {
+        let b = self.pop();
+        let a = self.pop();
+        let result = match op {
             BinaryOp::Add => a + b,
             BinaryOp::Subtract => a - b,
             BinaryOp::Multiply => a * b,
             BinaryOp::Divide => a / b,
-        }
+        };
+        self.push(result);
+        result
     } 
 
     fn run(&mut self) -> InterpretResult {
         
         loop {
+            if DEBUG {
+                print!("       ");
+                for slot in &self.stack {
+                    print!("[ ");
+                    print_value(slot);
+                    print!(" ]");
+                }
+                println!();
+                disassemble_instruction(&self.chunk, self.ip);
+            }
             let instruction = self.readByte();
             match instruction {
                 0 => { // OpConstant
                     let constant = self.readConstant();
-                    self.stack.push(constant);
+                    self.push(constant);
                     continue;
-                },
+                }
                 1 => { // OpReturn
-                    let value = self.stack.pop().unwrap();
-                    print_value(value);
+                    let value = self.pop();
+                    print_value(&value);
                     println!();
                     return InterpretResult::InterpretOk;
-                },
-                _ => return InterpretResult::InterpretRuntimeError,
+                }
+                2 => {
+                    let pop = self.pop();
+                    self.push(-pop);
+                    continue;
+                }
+                3 => {
+                    self.binaryOp(BinaryOp::Add);
+                    continue;
+                }
+                4 => {
+                    self.binaryOp(BinaryOp::Subtract);
+                    continue;
+                }
+                5 => {
+                    self.binaryOp(BinaryOp::Multiply);
+                    continue;
+                }
+                6 => {
+                    self.binaryOp(BinaryOp::Divide);
+                    continue;
+                }
+                _ => continue,
             }
         }
     }

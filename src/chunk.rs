@@ -1,9 +1,14 @@
-pub(crate) type Value = f32;
+pub(crate) type Value = f64;
 
-#[repr(u8)]
+#[derive(Debug)]
 pub(crate) enum OpCode {
     OpConstant,
     OpReturn,
+    OpNegate,
+    OpAdd,
+    OpSubtract,
+    OpMultiply,
+    OpDivide,
 }
 
 pub(crate) struct Chunk {
@@ -21,8 +26,8 @@ impl Chunk {
         }
     }
 
-    pub(crate) fn write(&mut self, byte: u8, line: usize) {
-        self.code.push(byte);
+    pub(crate) fn write(&mut self, code: u8, line: usize) {
+        self.code.push(code);
         self.lines.push(line);
     }
 

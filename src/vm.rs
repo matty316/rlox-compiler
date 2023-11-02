@@ -1,15 +1,15 @@
 use crate::chunk::{Chunk, Value};
 use crate::debug::{print_value, disassemble_instruction};
-use crate::chunk::OpCode::*;
+
 
 enum BinaryOp {
     Add, Subtract, Multiply, Divide
 }
 
 pub(crate) enum InterpretResult {
-    InterpretOk,
-    InterpretCompileError,
-    InterpretRuntimeError,
+    Ok,
+    CompileError,
+    RuntimeError,
 }
 
 pub(crate) struct VM {
@@ -43,18 +43,18 @@ impl VM {
         self.stack.pop().unwrap()
     }
 
-    fn readByte(&mut self) -> u8 {
+    fn read_byte(&mut self) -> u8 {
         let ip = self.ip;
         self.ip += 1;
         self.chunk.code[ip]
     }
 
-    fn readConstant(&mut self) -> Value {
-        let byte = self.readByte();
+    fn read_constant(&mut self) -> Value {
+        let byte = self.read_byte();
         self.chunk.constants[byte as usize]
     }
 
-    fn binaryOp(&mut self, op: BinaryOp) -> Value {
+    fn binary_op(&mut self, op: BinaryOp) -> Value {
         let b = self.pop();
         let a = self.pop();
         let result = match op {
@@ -80,10 +80,10 @@ impl VM {
                 println!();
                 disassemble_instruction(&self.chunk, self.ip);
             }
-            let instruction = self.readByte();
+            let instruction = self.read_byte();
             match instruction {
                 0 => { // OpConstant
-                    let constant = self.readConstant();
+                    let constant = self.read_constant();
                     self.push(constant);
                     continue;
                 }
@@ -91,7 +91,7 @@ impl VM {
                     let value = self.pop();
                     print_value(&value);
                     println!();
-                    return InterpretResult::InterpretOk;
+                    return InterpretResult::Ok;
                 }
                 2 => {
                     let pop = self.pop();
@@ -99,19 +99,19 @@ impl VM {
                     continue;
                 }
                 3 => {
-                    self.binaryOp(BinaryOp::Add);
+                    self.binary_op(BinaryOp::Add);
                     continue;
                 }
                 4 => {
-                    self.binaryOp(BinaryOp::Subtract);
+                    self.binary_op(BinaryOp::Subtract);
                     continue;
                 }
                 5 => {
-                    self.binaryOp(BinaryOp::Multiply);
+                    self.binary_op(BinaryOp::Multiply);
                     continue;
                 }
                 6 => {
-                    self.binaryOp(BinaryOp::Divide);
+                    self.binary_op(BinaryOp::Divide);
                     continue;
                 }
                 _ => continue,

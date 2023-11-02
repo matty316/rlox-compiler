@@ -2,13 +2,13 @@ pub(crate) type Value = f64;
 
 #[derive(Debug)]
 pub(crate) enum OpCode {
-    OpConstant,
-    OpReturn,
-    OpNegate,
-    OpAdd,
-    OpSubtract,
-    OpMultiply,
-    OpDivide,
+    Constant,
+    Return,
+    Negate,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
 }
 
 pub(crate) struct Chunk {

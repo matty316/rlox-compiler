@@ -6,6 +6,7 @@ enum BinaryOp {
     Add, Subtract, Multiply, Divide
 }
 
+#[derive(PartialEq)]
 pub(crate) enum InterpretResult {
     Ok,
     CompileError,
@@ -29,10 +30,8 @@ impl VM {
         }
     }    
 
-    pub(crate) fn interpret(&mut self, chunk: Chunk) -> InterpretResult {
-        self.chunk = chunk;
-        self.ip = 0;
-        self.run()
+    pub(crate) fn interpret(&mut self, source: &str) -> InterpretResult {
+        InterpretResult::Ok
     }
 
     fn push(&mut self, value: Value) {

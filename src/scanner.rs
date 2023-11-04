@@ -1,12 +1,13 @@
-pub(crate) struct Scanner {
-    start: *const u8,
-    current: *const u8,
+pub(crate) struct Scanner<'a> {
+    source: &'a str,
+    start: usize,
+    current: usize,
     line: usize,
 }
 
 pub(crate) struct Token {
     token_type: TokenType,
-    start: *const u8,
+    start: usize,
     length: usize,
     line: usize,
 }
@@ -34,11 +35,12 @@ pub(crate) enum TokenType {
     Error, Eof
 }
 
-impl Scanner {
-    pub(crate) fn new(source: &str) -> Self {
+impl<'a> Scanner<'a> {
+    pub(crate) fn new(source: &'a str) -> Self {
         Scanner {
-            start: source.as_ptr(),
-            current: source.as_ptr(),
+            source,
+            start: 0,
+            current: 0,
             line: 1,
         }
     }
@@ -132,14 +134,14 @@ impl Scanner {
     }
 
     fn advance(&mut self) -> u8 {
-        self.current = unsafe { self.current.add(1) };
-        unsafe { *self.current.offset(-1) }
+        self.current += 1;
+        self.source.as_bytes()[self.current - 1]
     }
 
     fn check(&mut self, expected: u8) -> bool {
         if self.is_at_end() { return false; }
-        unsafe { if *self.current != expected { return false; } }
-        self.current = unsafe { self.current.add(1) };
+        if self.peek() != expected{ return false; }
+        self.current += 1;
         true
     }
 
@@ -165,23 +167,23 @@ impl Scanner {
     }
 
     fn peek(&self) -> u8 {
-        unsafe { *self.current }
+        self.source.as_bytes()[self.current]
     }
 
     fn peek_next(&self) -> u8 {
         if self.is_at_end() { return b'\0' }
-        unsafe { *self.current.add(1) }
+        self.source.as_bytes()[self.current + 1]
     }
 
     fn is_at_end(&self) -> bool {
-        unsafe { *self.current == b'\0' }
+        self.source.as_bytes()[self.current] == b'\0'
     }
 
     fn make_token(&self, token_type: TokenType) -> Token {
         Token {
             token_type,
             start: self.start,
-            length: unsafe { self.current.offset_from(self.start) as usize },
+            length: self.current - self.start,
             line: self.line,
         }
     }
@@ -189,14 +191,14 @@ impl Scanner {
     fn error_token(&self, message: &str) -> Token {
         Token { 
             token_type: TokenType::Error,
-            start: message.as_ptr(), 
+            start: self.start, 
             length: message.len(), 
             line: self.line,
         }
     }
 
     fn ident_type(&mut self) -> TokenType {
-        match unsafe { *self.start } {
+        match self.source.as_bytes()[self.start] {
             b'a' => return self.check_keyword(1, 2, "nd", TokenType::And),
             b'c' => return self.check_keyword(1, 4, "lass", TokenType::Class),
             b'e' => return self.check_keyword(1, 3, "lse", TokenType::Else),
@@ -209,8 +211,8 @@ impl Scanner {
             b'v' => return self.check_keyword(1, 2, "ar", TokenType::Var),
             b'w' => return self.check_keyword(1, 4, "hile", TokenType::While),
             b'f' => {
-                if self.current as usize - self.start as usize > 1 {
-                    match unsafe { *self.start.add(1) } {
+                if self.current - self.start > 1 {
+                    match self.source.as_bytes()[self.start + 1] {
                         b'a' => return self.check_keyword(2, 3, "lse", TokenType::False),
                         b'o' => return self.check_keyword(2, 1, "r", TokenType::For),
                         b'u' => return self.check_keyword(2, 1, "n", TokenType::Fun),
@@ -219,8 +221,8 @@ impl Scanner {
                 }
             }
             b't' => {
-                if self.current as usize - self.start as usize > 1 {
-                    match unsafe { *self.start.add(1) } {
+                if self.current - self.start > 1 {
+                    match self.source.as_bytes()[self.start + 1] {
                         b'h' => return self.check_keyword(2, 2, "is", TokenType::This),
                         b'r' => return self.check_keyword(2, 2, "ue", TokenType::True),
                         _ => (),
@@ -233,9 +235,9 @@ impl Scanner {
     }
 
     fn check_keyword(&self, start: usize, length: usize, rest: &str, token_type: TokenType) -> TokenType {
-        if self.current as usize - self.start as usize == start + length {
-            let slice = unsafe { std::slice::from_raw_parts(self.start.add(start), length) };
-            if slice == rest.as_bytes() {
+        if self.current - self.start == start + length {
+            let slice = &self.source[self.start+start..self.start+start+length];
+            if slice == rest {
                 return token_type;
             }
         }
